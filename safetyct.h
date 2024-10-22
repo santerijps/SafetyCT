@@ -35,14 +35,14 @@
         goto exit;          \
     } while (0)
 
-// This error should never occur.
+// Refuse to deal with the error and crash the program.
 // Call this in an error-handler `switch` in situations where the error should never occur.
 // Only use this if you know that the error should never be returned!
 // NOTE: CAUSES THE PROGRAM TO EXIT!
 //
 // Requirements:
 //  - called inside a `switch` -statement
-#define forbid(ERROR)                       \
+#define refuse(ERROR)                       \
     case ERROR:                             \
         fprintf(                            \
             stderr,                         \
@@ -93,6 +93,11 @@
     case ERROR:         \
         error = ERROR;  \
         break
+
+#define endure resume
+#define perish refuse
+#define escape propagate
+#define escape_as propagate_as
 
 #define __catch(ERROR, VARIABLE_NAME)   \
     do {                                \
