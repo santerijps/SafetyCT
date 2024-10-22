@@ -1,5 +1,5 @@
-#ifndef SAFETY_CT_H
-#define SAFETY_CT_H
+#ifndef SAFETYCT_H
+#define SAFETYCT_H
 
 #include <stdio.h>
 #include <stdlib.h>
