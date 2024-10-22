@@ -178,18 +178,6 @@
 #define concat_name(PREFIX, SUFFIX) __concat_name(PREFIX, SUFFIX)
 #define unique_name(PREFIX) concat_name(PREFIX, __COUNTER__)
 
-#define __defer(STATEMENT, CLEANUP_VARIABLE_NAME, CLEANUP_FUNCTION_NAME)                \
-    void CLEANUP_FUNCTION_NAME(void *arg) {                                             \
-        (void) arg;                                                                     \
-        STATEMENT;                                                                      \
-    }                                                                                   \
-    int CLEANUP_VARIABLE_NAME __attribute__ ((__cleanup__(CLEANUP_FUNCTION_NAME))) = 0
-
-// Defer running statements until the end of the current scope.
-// If there are multiple defers in the same scope, they will be called in reverse order.
-#define defer(STATEMENT)\
-    __defer(STATEMENT, unique_name(__cleanup_var),  unique_name(__cleanup_func))
-
 #define __defer_if(CONDITION, STATEMENT, CLEANUP_VARIABLE_NAME, CLEANUP_FUNCTION_NAME)  \
     void CLEANUP_FUNCTION_NAME(void *arg) {                                             \
         (void) arg;                                                                     \
@@ -199,10 +187,14 @@
     }                                                                                   \
     int CLEANUP_VARIABLE_NAME __attribute__ ((__cleanup__(CLEANUP_FUNCTION_NAME))) = 0
 
+// Defer running statements until the end of the current scope.
+// If there are multiple defers in the same scope, they will be called in reverse order.
+#define defer(STATEMENT)\
+    __defer_if(1, STATEMENT, unique_name(__cleanup_var),  unique_name(__cleanup_func))
+
 // Defer running statements until the end of the current scope if the condition is truthy.
 // If there are multiple defers in the same scope, they will be called in reverse order.
 #define defer_if(CONDITION, STATEMENT)\
     __defer_if(CONDITION, STATEMENT, unique_name(__cleanup_var),  unique_name(__cleanup_func))
-
 
 #endif
