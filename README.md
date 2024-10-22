@@ -49,16 +49,15 @@ enum ReadNumberError read_number(
     size_t *invalid_index
 ) {
     enum ReadNumberError error = READ_NUMBER_ERROR_NONE;
-    FILE *file = NULL;
-    size_t bytes_read = 0;
 
     expect(file_path != NULL, READ_NUMBER_ERROR_NULL_PATH);
     expect(buffer != NULL, READ_NUMBER_ERROR_NULL_BUFFER);
 
-    file = fopen(file_path, "r");
+    FILE *file = fopen(file_path, "r");
     expect(file != NULL, READ_NUMBER_ERROR_FOPEN_FAILED);
+    defer(fclose(file));
 
-    bytes_read = fread(buffer, 1, buffer_size - 1, file);
+    size_t bytes_read = fread(buffer, 1, buffer_size - 1, file);
     expect(feof(file), READ_NUMBER_ERROR_BUFFER_EXCEEDED);
 
     for (size_t i = 0; i < bytes_read; i += 1) {
@@ -73,7 +72,6 @@ enum ReadNumberError read_number(
     }
 
 exit:
-    fclose(file);
     return error;
 }
 
@@ -126,6 +124,7 @@ These macros depend on the `exit` label.
 
 ### Use anywhere
 
+- `defer(STATEMENTS)` - Defer the execution of code until we leave the current scope.
 - `crash(ERROR)` - Crash the program with a specific error.
 - `unreachable` - Crash the program without an error.
 - `null_safe(POINTER)` - If the pointer is `null`, crash the program. Otherwise return the pointer.
