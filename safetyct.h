@@ -120,6 +120,19 @@
         error = ERROR;  \
         break
 
+#define __try(FUNCTION_CALL, VARIABLE_NAME)\
+    do {\
+        int VARIABLE_NAME = FUNCTION_CALL;\
+        if (VARIABLE_NAME != 0) {\
+            throw(VARIABLE_NAME);\
+        }\
+    } while (0)
+
+// Try to successfully run a SafetyCT function.
+// Throw any error that occurs, continue if there is no error.
+// This can be used if it's not important to handle every error individually.
+#define try(FUNCTION_CALL) __try(FUNCTION_CALL, unique_name(error))
+
 // Declare a part of your source code unreachable.
 // In case it's reached, it should be considered a serious bug!
 // NOTE: CAUSES THE PROGRAM TO EXIT!

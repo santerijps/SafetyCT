@@ -111,6 +111,7 @@ Below are listed all the macros, their descriptions and where you're "allowed" t
 These macros depend on the `exit` label.
 
 - `throw(ERROR)` - Update the error variable and goto exit. "Throwing" in the SafetyCT context refers to this macro.
+- `try(FUNCTION_CALL)` - Call a SafetyCT function and throw in case of an error, else continue with the function.
 - `expect(EXPRESSION, ERROR)` - Expect an expression to be true, else throw.
 - `catch(EXPRESSION, ERROR)` - Catch a bad expression and throw, else continue with the function.
 
