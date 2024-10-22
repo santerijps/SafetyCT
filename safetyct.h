@@ -131,7 +131,7 @@
 // Try to successfully run a SafetyCT function.
 // Throw any error that occurs, continue if there is no error.
 // This can be used if it's not important to handle every error individually.
-#define try(FUNCTION_CALL) __try(FUNCTION_CALL, unique_name(error))
+#define try(FUNCTION_CALL) __try(FUNCTION_CALL, unique_name(__error))
 
 // Declare a part of your source code unreachable.
 // In case it's reached, it should be considered a serious bug!
@@ -179,6 +179,6 @@
 // Defer running statements until the end of the current scope.
 // If there are multiple defers in the same scope, they will be called in reverse order.
 #define defer(STATEMENTS)\
-    __defer(STATEMENTS, unique_name(cleanup_var),  unique_name(cleanup_func))
+    __defer(STATEMENTS, unique_name(__cleanup_var),  unique_name(__cleanup_func))
 
 #endif
