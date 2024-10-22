@@ -133,6 +133,19 @@
 // This can be used if it's not important to handle every error individually.
 #define try(FUNCTION_CALL) __try(FUNCTION_CALL, unique_name(__error))
 
+#define __attempt(FUNCTION_CALL, VARIABLE_NAME) \
+    do {                                        \
+        int VARIABLE_NAME = FUNCTION_CALL;      \
+        if (VARIABLE_NAME != 0) {               \
+            crash(VARIABLE_NAME);               \
+        }                                       \
+    } while (0)
+
+// Attempt to successfully run a SafetyCT function.
+// Crash if an error occurs, continue if there is no error.
+// This can be used like a runtime assert, asserting that the function call must succeed.
+#define attempt(FUNCTION_CALL) __attempt(FUNCTION_CALL, unique_name(error))
+
 // Declare a part of your source code unreachable.
 // In case it's reached, it should be considered a serious bug!
 // NOTE: CAUSES THE PROGRAM TO EXIT!
