@@ -120,12 +120,12 @@
         error = ERROR;  \
         break
 
-#define __try(FUNCTION_CALL, VARIABLE_NAME)\
-    do {\
-        int VARIABLE_NAME = FUNCTION_CALL;\
-        if (VARIABLE_NAME != 0) {\
-            throw(VARIABLE_NAME);\
-        }\
+#define __try(FUNCTION_CALL, VARIABLE_NAME) \
+    do {                                    \
+        int VARIABLE_NAME = FUNCTION_CALL;  \
+        if (VARIABLE_NAME != 0) {           \
+            throw(VARIABLE_NAME);           \
+        }                                   \
     } while (0)
 
 // Try to successfully run a SafetyCT function.
