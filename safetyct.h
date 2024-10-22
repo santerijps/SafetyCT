@@ -76,7 +76,7 @@
     case ERROR_UPSTREAM:                                \
         throw(ERROR_DOWNSTREAM)
 
-// Ignore an error.
+// Ignore the error and resume with the rest of the function.
 // The `error` variable will not be updated.
 // Requirements:
 //  - called inside a `switch` -statement
@@ -84,12 +84,12 @@
     case ERROR:         \
         break
 
-// Permit for an error to occur, update the `error` variable but do not throw.
-// Use case: a "happy" error, which tells the user that something happened that is not serious.
+// Update the `error` variable and resume with the rest of the function.
+// Use cases: when there is no error or the error is not fatal.
 // Requirements:
 //  - called inside a `switch` -statement
 //  - `error` variable is declared
-#define permit(ERROR)   \
+#define resume(ERROR)   \
     case ERROR:         \
         error = ERROR;  \
         break
