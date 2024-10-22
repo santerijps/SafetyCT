@@ -23,32 +23,6 @@
         (POINTER);                              \
     })
 
-// Expect that the expression is true, else throw an error.
-// The `error` variable is set to `ERROR` and `goto exit` is performed.
-//
-// Requirements:
-//  - `error` variable is declared
-//  - `exit` label is declared
-#define expect(EXPRESSION, ERROR)   \
-    do {                            \
-        if (!(EXPRESSION)) {        \
-            throw(ERROR);           \
-        }                           \
-    } while (0)
-
-// Catch an error if the expression is true.
-// The `error` variable is set to `ERROR` and `goto exit` is performed.
-//
-// Requirements:
-//  - `error` variable is declared
-//  - `exit` label is declared
-#define catch(EXPRESSION, ERROR)    \
-    do {                            \
-        if (EXPRESSION) {           \
-            throw(ERROR);           \
-        }                           \
-    } while (0)
-
 // Throw an error by setting the `error` variable to `ERROR`,
 // followed by `goto exit`.
 //
@@ -120,31 +94,53 @@
         error = ERROR;  \
         break
 
-#define __try(FUNCTION_CALL, VARIABLE_NAME) \
-    do {                                    \
-        int VARIABLE_NAME = FUNCTION_CALL;  \
-        if (VARIABLE_NAME != 0) {           \
-            throw(VARIABLE_NAME);           \
-        }                                   \
+#define __catch(ERROR, VARIABLE_NAME)   \
+    do {                                \
+        int VARIABLE_NAME = ERROR;      \
+        if (VARIABLE_NAME != 0) {       \
+            throw(VARIABLE_NAME);       \
+        }                               \
     } while (0)
 
 // Try to successfully run a SafetyCT function.
 // Throw any error that occurs, continue if there is no error.
 // This can be used if it's not important to handle every error individually.
-#define try(FUNCTION_CALL) __try(FUNCTION_CALL, unique_name(__error))
+#define catch(ERROR) __catch(ERROR, unique_name(__error))
 
-#define __attempt(FUNCTION_CALL, VARIABLE_NAME) \
-    do {                                        \
-        int VARIABLE_NAME = FUNCTION_CALL;      \
-        if (VARIABLE_NAME != 0) {               \
-            crash(VARIABLE_NAME);               \
-        }                                       \
+// Assume that the expression is truthy, throw if it's not.
+// The `error` variable is set to `ERROR` and `goto exit` is performed.
+//
+// Requirements:
+//  - `error` variable is declared
+//  - `exit` label is declared
+#define assume(EXPRESSION, ERROR)   \
+    do {                            \
+        if (!(EXPRESSION)) {        \
+            throw(ERROR);           \
+        }                           \
+    } while (0)
+
+#define __drop(ERROR, VARIABLE_NAME)    \
+    do {                                \
+        int VARIABLE_NAME = ERROR;      \
+        if (VARIABLE_NAME != 0) {       \
+            crash(VARIABLE_NAME);       \
+        }                               \
     } while (0)
 
 // Attempt to successfully run a SafetyCT function.
 // Crash if an error occurs, continue if there is no error.
 // This can be used like a runtime assert, asserting that the function call must succeed.
-#define attempt(FUNCTION_CALL) __attempt(FUNCTION_CALL, unique_name(error))
+#define drop(ERROR) __drop(ERROR, unique_name(error))
+
+// Presume that the expression is truthy, crash if it's not.
+// This can be used like a runtime assert, asserting that the expression is truthy.
+#define presume(EXPRESSION, ERROR)  \
+    do {                            \
+        if (!(EXPRESSION)) {        \
+            crash(ERROR);           \
+        }                           \
+    } while (0)
 
 // Declare a part of your source code unreachable.
 // In case it's reached, it should be considered a serious bug!
