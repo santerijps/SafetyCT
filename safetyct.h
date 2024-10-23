@@ -71,6 +71,17 @@
 // Crash the program with an error.
 #define crash(ERROR) __crash("crash", ERROR)
 
+#define __remark(ERROR, VARIABLE_NAME)  \
+    do {                                \
+        int VARIABLE_NAME = ERROR;      \
+        if (VARIABLE_NAME != 0) {       \
+            error = VARIABLE_NAME;      \
+        }                               \
+    } while (0)
+
+// Remark the error but do not throw or crash.
+#define remark(ERROR) __remark(ERROR, unique_name(__error))
+
 #define __try(ERROR, VARIABLE_NAME)     \
     do {                                \
         int VARIABLE_NAME = ERROR;      \
