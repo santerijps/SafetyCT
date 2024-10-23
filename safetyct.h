@@ -6,14 +6,16 @@
 
 #define __concat_name(PREFIX, SUFFIX) PREFIX ## SUFFIX
 #define concat_name(PREFIX, SUFFIX) __concat_name(PREFIX, SUFFIX)
+
+// Macro for generating a unique name.
 #define unique_name(PREFIX) concat_name(PREFIX, __COUNTER__)
+
+#define __traceback_leading_text "Traceback (most recent call last):\n"
+#define __traceback_error_format "    File %s, line %d, in function %s\n        %s %s"
 
 #ifdef DEBUG
     #define __traceback_count_max 128
     #define __traceback_length_max 256
-    #define __traceback_highlight_color "\e[31m"
-    #define __traceback_default_color "\e[0m"
-    #define __traceback_format "    File %s, line %d, in function %s\n        %s %s"
 
     static int __traceback_count = 0;
     static char __traceback[__traceback_count_max][__traceback_length_max];
@@ -25,21 +27,29 @@
             snprintf(                                               \
                 (char*) &__traceback[__traceback_count++],          \
                 __traceback_length_max,                             \
-                __traceback_format,                                 \
+                __traceback_error_format,                           \
                 FILE, LINE, FUNCTION, CAUSE, # ERROR                \
             );                                                      \
         }
 
-    #define __traceback_print                                           \
-        do {                                                            \
-            fprintf(stderr, "Traceback (most recent call last):\n");    \
-            for (int i = 0; i < __traceback_count; i += 1)              \
-                fprintf(stderr, "%s\n", __traceback[i]);                \
+    #define __traceback_print(FILE, LINE, FUNCTION, CAUSE, ERROR)   \
+        do {                                                        \
+            fprintf(stderr, __traceback_leading_text);              \
+            for (int i = 0; i < __traceback_count; i += 1)          \
+                fprintf(stderr, "%s\n", __traceback[i]);            \
         } while (0);
 #else
     #define __traceback_reset
     #define __traceback_push(FILE, LINE, FUNCTION, CAUSE, ERROR)
-    #define __traceback_print
+    #define __traceback_print(FILE, LINE, FUNCTION, CAUSE, ERROR)   \
+        do {                                                        \
+            fprintf(                                                \
+                stderr,                                             \
+                __traceback_leading_text                            \
+                __traceback_error_format,                           \
+                FILE, LINE, FUNCTION, CAUSE, # ERROR                \
+            );                                                      \
+        } while (0);
 #endif
 
 // Returns the pointer if it's not null, otherwise crashes the program.
@@ -64,7 +74,7 @@
 #define __crash(CAUSE, ERROR)                                                       \
     do {                                                                            \
         __traceback_push(__FILE__, __LINE__, __PRETTY_FUNCTION__, CAUSE, ERROR)     \
-        __traceback_print                                                           \
+        __traceback_print(__FILE__, __LINE__, __PRETTY_FUNCTION__, CAUSE, ERROR)    \
         exit(EXIT_FAILURE);                                                         \
     } while (0)
 
