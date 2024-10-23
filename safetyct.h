@@ -125,7 +125,7 @@
         }                           \
     } while (0)
 
-#define __drop(ERROR, VARIABLE_NAME)    \
+#define __raise(ERROR, VARIABLE_NAME)   \
     do {                                \
         int VARIABLE_NAME = ERROR;      \
         if (VARIABLE_NAME != 0) {       \
@@ -136,7 +136,7 @@
 // Attempt to successfully run a SafetyCT function.
 // Crash if an error occurs, continue if there is no error.
 // This can be used like a runtime assert, asserting that the function call must succeed.
-#define drop(ERROR) __drop(ERROR, unique_name(error))
+#define raise(ERROR) __raise(ERROR, unique_name(error))
 
 // Presume that the expression is truthy, crash if it's not.
 // This can be used like a runtime assert, asserting that the expression is truthy.
