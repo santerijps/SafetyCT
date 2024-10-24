@@ -9,7 +9,7 @@
 #define concat_name(PREFIX, SUFFIX) __concat_name(PREFIX, SUFFIX)
 
 // Macro for generating a unique name.
-#define unique_name(PREFIX) concat_name(PREFIX, __COUNTER__)
+#define unique_name(PREFIX) concat_name(concat_name(PREFIX, __COUNTER__), __LINE__)
 
 #define __traceback_leading_text "Traceback (most recent call last):\n"
 #define __traceback_error_format "    File %s, line %d, in function %s\n        %s %s\n"
@@ -36,8 +36,8 @@
     #define __traceback_count_max 128
     #define __traceback_length_max 256
 
-    static int __traceback_count = 0;
-    static char __traceback[__traceback_count_max][__traceback_length_max];
+    static int __traceback_count __attribute__ ((unused)) = 0;
+    static char __traceback[__traceback_count_max][__traceback_length_max] __attribute__ ((unused));
 
     #define __traceback_reset __traceback_count = 0;
 
@@ -58,6 +58,9 @@
                 fprintf(stderr, "%s", __traceback[i]);              \
             fprintf(stderr, "%s\n", __describe_cause(CAUSE));       \
         } while (0);
+
+    #define __test(NAME) __attribute__ ((constructor(200 + __COUNTER__))) void NAME(void)
+    #define test __test(unique_name(__test_function_))
 #else
     #define __traceback_reset
     #define __traceback_push(FILE, LINE, FUNCTION, CAUSE, ERROR)
@@ -71,6 +74,8 @@
             );                                                      \
             fprintf(stderr, "%s\n", __describe_cause(CAUSE));       \
         } while (0);
+
+    #define test void unique_name(__unused_function_)(void)
 #endif
 
 #define __throw(CAUSE, ERROR)                                                       \
