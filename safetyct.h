@@ -76,8 +76,7 @@
 #define __throw(CAUSE, ERROR)                                                       \
     do {                                                                            \
         __traceback_push(__FILE__, __LINE__, __PRETTY_FUNCTION__, CAUSE, ERROR)     \
-        error = ERROR;                                                              \
-        goto exit;                                                                  \
+        return ERROR;                                                               \
     } while (0)
 
 // Throw an error.
@@ -132,7 +131,6 @@
 #define expect(ERROR) __expect(ERROR, unique_name(error))
 
 // Assume that the expression is truthy, throw if it's not.
-// The `error` variable is set to `ERROR` and `goto exit` is performed.
 #define assume(EXPRESSION, ERROR)       \
     do {                                \
         if (!(EXPRESSION)) {            \
@@ -142,6 +140,7 @@
 
 // Presume that the expression is truthy, crash if it's not.
 // This can be used like a runtime assert, asserting that the expression is truthy.
+// TODO: Add the actual value of the expression to the traceback message
 #define presume(EXPRESSION)                 \
     do {                                    \
         if (!(EXPRESSION)) {                \
@@ -202,6 +201,15 @@
     ({                                      \
         if ((POINTER) == NULL) {            \
             __crash("verify", POINTER);     \
+        }                                   \
+        (POINTER);                          \
+    })
+
+// Returns the pointer if it's not null, otherwise throws.
+#define validate(POINTER, ERROR)            \
+    ({                                      \
+        if ((POINTER) == NULL) {            \
+            __throw("validate", ERROR);     \
         }                                   \
         (POINTER);                          \
     })
