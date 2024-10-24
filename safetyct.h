@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define __concat_name(PREFIX, SUFFIX) PREFIX ## SUFFIX
 #define concat_name(PREFIX, SUFFIX) __concat_name(PREFIX, SUFFIX)
@@ -12,6 +13,24 @@
 
 #define __traceback_leading_text "Traceback (most recent call last):\n"
 #define __traceback_error_format "    File %s, line %d, in function %s\n        %s %s\n"
+
+#define __describe_cause(CAUSE)                             \
+    ({                                                      \
+        char *__cause = CAUSE;                              \
+        if (!strncmp(CAUSE, "expect", 6)) {                 \
+            __cause = "Your expectation was not met";       \
+        }                                                   \
+        else if (!strncmp(CAUSE, "crash", 5)) {             \
+            __cause =  "You crashed the program";           \
+        }                                                   \
+        else if (!strncmp(CAUSE, "presume", 7)) {           \
+            __cause = "Your presumption was wrong";         \
+        }                                                   \
+        else if (!strncmp(CAUSE, "verify", 6)) {            \
+            __cause = "Pointer failed null verification";   \
+        }                                                   \
+        __cause;                                            \
+    })
 
 #ifdef DEBUG
     #define __traceback_count_max 128
@@ -37,6 +56,7 @@
             fprintf(stderr, __traceback_leading_text);              \
             for (int i = 0; i < __traceback_count; i += 1)          \
                 fprintf(stderr, "%s", __traceback[i]);              \
+            fprintf(stderr, "%s\n", __describe_cause(CAUSE));       \
         } while (0);
 #else
     #define __traceback_reset
@@ -49,17 +69,9 @@
                 __traceback_error_format,                           \
                 FILE, LINE, FUNCTION, CAUSE, # ERROR                \
             );                                                      \
+            fprintf(stderr, "%s\n", __describe_cause(CAUSE));       \
         } while (0);
 #endif
-
-// Returns the pointer if it's not null, otherwise crashes the program.
-#define null_safe(POINTER)                  \
-    ({                                      \
-        if ((POINTER) == NULL) {            \
-            __crash("null_safe", POINTER);  \
-        }                                   \
-        (POINTER);                          \
-    })
 
 #define __throw(CAUSE, ERROR)                                                       \
     do {                                                                            \
@@ -130,12 +142,12 @@
 
 // Presume that the expression is truthy, crash if it's not.
 // This can be used like a runtime assert, asserting that the expression is truthy.
-#define presume(EXPRESSION, ERROR)      \
-    do {                                \
-        if (!(EXPRESSION)) {            \
-            __crash("presume", ERROR);  \
-        }                               \
-        __traceback_reset               \
+#define presume(EXPRESSION)                 \
+    do {                                    \
+        if (!(EXPRESSION)) {                \
+            __crash("presume", EXPRESSION); \
+        }                                   \
+        __traceback_reset                   \
     } while (0)
 
 // Ignore the error and resume with the rest of the function.
@@ -184,5 +196,14 @@
 // Defer running statements until the end of the current scope if the condition is truthy.
 // If there are multiple defers in the same scope, they will be called in reverse order.
 #define defer_if(CONDITION, STATEMENT) __defer_if(CONDITION, STATEMENT, unique_name(__cleanup_var),  unique_name(__cleanup_func))
+
+// Returns the pointer if it's not null, otherwise crashes the program.
+#define verify(POINTER)                     \
+    ({                                      \
+        if ((POINTER) == NULL) {            \
+            __crash("verify", POINTER);     \
+        }                                   \
+        (POINTER);                          \
+    })
 
 #endif
