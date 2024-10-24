@@ -11,7 +11,7 @@
 #define unique_name(PREFIX) concat_name(PREFIX, __COUNTER__)
 
 #define __traceback_leading_text "Traceback (most recent call last):\n"
-#define __traceback_error_format "    File %s, line %d, in function %s\n        %s %s"
+#define __traceback_error_format "    File %s, line %d, in function %s\n        %s %s\n"
 
 #ifdef DEBUG
     #define __traceback_count_max 128
@@ -36,7 +36,7 @@
         do {                                                        \
             fprintf(stderr, __traceback_leading_text);              \
             for (int i = 0; i < __traceback_count; i += 1)          \
-                fprintf(stderr, "%s\n", __traceback[i]);            \
+                fprintf(stderr, "%s", __traceback[i]);              \
         } while (0);
 #else
     #define __traceback_reset
