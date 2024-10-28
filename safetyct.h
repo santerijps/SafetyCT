@@ -11,6 +11,9 @@
 // Macro for generating a unique name.
 #define unique_name(PREFIX) concat_name(concat_name(PREFIX, __COUNTER__), __LINE__)
 
+// Get the length of a stack allocated array.
+#define len(ARRAY) (sizeof(ARRAY) / sizeof(*ARRAY))
+
 #define __traceback_leading_text "Traceback (most recent call last):\n"
 #define __traceback_error_format "    File %s, line %d, in function %s\n        %s %s\n"
 
