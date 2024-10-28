@@ -32,11 +32,11 @@
         __cause;                                            \
     })
 
-#ifdef DEBUG
+//
+//  DEBUG MODE: Expand debugging capabilities with longer error messages
+//
 
-    //
-    //  TRACEBACK
-    //
+#ifdef DEBUG
 
     #define __traceback_count_max 128
     #define __traceback_length_max 256
@@ -64,9 +64,28 @@
             fprintf(stderr, "%s\n", __traceback_describe_cause(CAUSE)); \
         } while (0);
 
-    //
-    //  TESTING
-    //
+#else
+
+    #define __traceback_reset
+    #define __traceback_push(FILE, LINE, FUNCTION, CAUSE, ERROR)
+    #define __traceback_print(FILE, LINE, FUNCTION, CAUSE, ERROR)       \
+        do {                                                            \
+            fprintf(                                                    \
+                stderr,                                                 \
+                __traceback_leading_text                                \
+                __traceback_error_format,                               \
+                FILE, LINE, FUNCTION, CAUSE, # ERROR                    \
+            );                                                          \
+            fprintf(stderr, "%s\n", __traceback_describe_cause(CAUSE)); \
+        } while (0);
+
+#endif
+
+//
+//  TESTING MODE: Run tests defined in the source files
+//
+
+#ifdef TEST
 
     #define __test_messages_count_max 1024
     #define __test_messages_length_max 256
@@ -75,23 +94,23 @@
     static unsigned __test_count __attribute__ ((unused)) = 0;
     static unsigned __test_fail_count __attribute__ ((unused)) = 0;
 
-    static __attribute__ ((unused)) int __is_equal_i32(int a, int b) {
+    static __attribute__ ((const, unused)) int __is_equal_i32(int a, int b) {
         return a == b;
     }
 
-    static __attribute__ ((unused)) int __is_equal_i64(int a, int b) {
+    static __attribute__ ((const, unused)) int __is_equal_i64(long long a, long long b) {
         return a == b;
     }
 
-    static __attribute__ ((unused)) int __is_equal_u32(unsigned a, unsigned b) {
+    static __attribute__ ((const, unused)) int __is_equal_u32(unsigned a, unsigned b) {
         return a == b;
     }
 
-    static __attribute__ ((unused)) int __is_equal_u64(unsigned long long a, unsigned long long b) {
+    static __attribute__ ((const, unused)) int __is_equal_u64(unsigned long long a, unsigned long long b) {
         return a == b;
     }
 
-    static __attribute__ ((unused)) int __is_equal_string(const char *a, const char *b) {
+    static __attribute__ ((const, unused)) int __is_equal_string(const char *a, const char *b) {
         return !strcmp(a, b);
     }
 
@@ -147,28 +166,26 @@
             );                                                      \
         }
 
-    #define __test(NAME, DESC, BODY)                                        \
-        __attribute__((constructor(200 + __COUNTER__))) void NAME(void) {   \
-            const char *__desc __attribute__ ((unused)) = DESC;             \
-            __test_count += 1;                                              \
-            int run_test(void) {                                            \
-                BODY;                                                       \
-                return 0;                                                   \
-            }                                                               \
-            int __error = run_test();                                       \
-            char *__status = "PASS", *__color = "\e[32m";                   \
-            if (__error) {                                                  \
-                __status = "FAIL";                                          \
-                __color = "\e[31m";                                         \
-            }                                                               \
-            fprintf(                                                        \
-                stderr,                                                     \
-                "%s[%s]\e[0m %s (%s:%d)\n",                                 \
-                __color, __status, DESC, __FILE__, __LINE__                 \
-            );                                                              \
+    #define test(DESC, BODY)                                                                \
+        __attribute__((constructor(200 + __COUNTER__))) void unique_name(__test_)(void) {   \
+            const char *__desc __attribute__ ((unused)) = DESC;                             \
+            __test_count += 1;                                                              \
+            int run_test(void) {                                                            \
+                BODY;                                                                       \
+                return 0;                                                                   \
+            }                                                                               \
+            int __error = run_test();                                                       \
+            char *__status = "PASS", *__color = "\e[32m";                                   \
+            if (__error) {                                                                  \
+                __status = "FAIL";                                                          \
+                __color = "\e[31m";                                                         \
+            }                                                                               \
+            fprintf(                                                                        \
+                stdout,                                                                     \
+                "%s[%s]\e[0m %s (%s:%d)\n",                                                 \
+                __color, __status, DESC, __FILE__, __LINE__                                 \
+            );                                                                              \
         }
-
-    #define test(DESC, BODY) __test(unique_name(__test_), DESC, BODY)
 
     // TODO: If used in more than one compilation units, this function will run multiple times
     static __attribute__ ((constructor(65535))) void __after_tests(void) {
@@ -177,40 +194,17 @@
         }
         unsigned __test_pass_count = __test_count - __test_fail_count;
         for (unsigned __i = 0; __i < __test_fail_count; __i += 1) {
-            fprintf(stderr, "\n%s", __test_messages[__i]);
+            fprintf(stdout, "\n%s", __test_messages[__i]);
         }
         fprintf(
-            stderr,
-            "\n\e[34mTotal:\e[0m %u, \e[32mPass:\e[0m %u, \e[31mFail:\e[0m %u\n\n",
+            stdout,
+            "\n\e[34mTotal:\e[0m %u, \e[32mPass:\e[0m %u, \e[31mFail:\e[0m %u\n",
             __test_count, __test_pass_count, __test_fail_count
         );
-        if (__test_fail_count > 0) {
-            exit(EXIT_FAILURE);
-        }
+        exit(__test_fail_count ? EXIT_FAILURE : EXIT_SUCCESS);
     }
 
 #else
-
-    //
-    //  TRACEBACK
-    //
-
-    #define __traceback_reset
-    #define __traceback_push(FILE, LINE, FUNCTION, CAUSE, ERROR)
-    #define __traceback_print(FILE, LINE, FUNCTION, CAUSE, ERROR)       \
-        do {                                                            \
-            fprintf(                                                    \
-                stderr,                                                 \
-                __traceback_leading_text                                \
-                __traceback_error_format,                               \
-                FILE, LINE, FUNCTION, CAUSE, # ERROR                    \
-            );                                                          \
-            fprintf(stderr, "%s\n", __traceback_describe_cause(CAUSE)); \
-        } while (0);
-
-    //
-    //  TESTTING
-    //
 
     #define test(DESC, BODY)
 
@@ -233,7 +227,7 @@
     do {                                                                            \
         __traceback_push(__FILE__, __LINE__, __PRETTY_FUNCTION__, CAUSE, ERROR)     \
         __traceback_print(__FILE__, __LINE__, __PRETTY_FUNCTION__, CAUSE, ERROR)    \
-        exit(EXIT_FAILURE);                                                         \
+        exit(_Generic(ERROR, char*: 1, default: ERROR));                            \
     } while (0)
 
 // Crash the program with an error.
@@ -356,7 +350,7 @@
 #define defer_if(CONDITION, STATEMENT) __defer_if(CONDITION, STATEMENT, unique_name(__cleanup_var),  unique_name(__cleanup_func))
 
 //
-//  POINTER
+//  POINTER OPERATIONS
 //
 
 // Returns the pointer if it's not null, otherwise crashes the program.
