@@ -12,7 +12,10 @@
 #define unique_name(PREFIX) concat_name(concat_name(PREFIX, __COUNTER__), __LINE__)
 
 // Get the length of a stack allocated array.
-#define len(ARRAY) (sizeof(ARRAY) / sizeof(*ARRAY))
+#define array_length(ARRAY) (sizeof(ARRAY) / sizeof(*ARRAY))
+
+// Get the biggest index value that can be used access array items.
+#define array_index_max(ARRAY) (len(ARRAY) - 1)
 
 // Define a function with the const attribute.
 // The function should be a pure function.
@@ -364,7 +367,7 @@
 #define verify(POINTER)                     \
     ({                                      \
         if ((POINTER) == NULL) {            \
-            __crash("verify", POINTER);     \
+            __crash("verify", # POINTER);   \
         }                                   \
         (POINTER);                          \
     })
