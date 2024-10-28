@@ -247,17 +247,6 @@
 //  IF - THROW - CRASH
 //
 
-#define __remark(ERROR, VARIABLE_NAME)  \
-    do {                                \
-        int VARIABLE_NAME = ERROR;      \
-        if (VARIABLE_NAME != 0) {       \
-            error = VARIABLE_NAME;      \
-        }                               \
-    } while (0)
-
-// Remark the error but do not throw or crash.
-#define remark(ERROR) __remark(ERROR, unique_name(__error))
-
 #define __try(ERROR, VARIABLE_NAME)     \
     do {                                \
         int VARIABLE_NAME = ERROR;      \
@@ -312,13 +301,6 @@
 // The `error` variable will not be updated.
 #define ignore(ERROR)   \
     case ERROR:         \
-        break
-
-// Update the `error` variable and resume with the rest of the function.
-// Use cases: when there is no error or the error is not fatal.
-#define resume(ERROR)   \
-    case ERROR:         \
-        error = ERROR;  \
         break
 
 // Propagate an error to the calling function instead of handling it yourself.

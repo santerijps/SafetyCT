@@ -36,7 +36,6 @@ To help with these, refer to the following table:
 
 |Statment/operation|if (condition)|if (error)|case|
 |-|-|-|-|
-|**update error**|-|`remark`|`resume`|
 |**throw**|`assume`|`try`|`propagate`|
 |**crash**|`presume`|`expect`|`refuse`|
 
