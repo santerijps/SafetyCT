@@ -14,6 +14,10 @@
 // Get the length of a stack allocated array.
 #define len(ARRAY) (sizeof(ARRAY) / sizeof(*ARRAY))
 
+// Define a function with the const attribute.
+// The function should be a pure function.
+#define constfunc __attribute__((const))
+
 #define __traceback_leading_text "Traceback (most recent call last):\n"
 #define __traceback_error_format "    File %s, line %d, in function %s\n        %s %s\n"
 
