@@ -50,6 +50,8 @@
 #define args_count(ARGS...) (sizeof((int[]){ARGS}) / sizeof(int))
 #define args_get(INDEX, ARGS...) (((int[]){ARGS})[(INDEX)])
 #define args_has_index(INDEX, ARGS...) (args_count(ARGS) - 1 >= (INDEX))
+
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #define args_get_or_default(INDEX, DEFAULT, ARGS...) (args_has_index(INDEX, ARGS) ? args_get(INDEX, ARGS) : (DEFAULT))
 
 //
