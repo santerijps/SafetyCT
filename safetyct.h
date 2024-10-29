@@ -11,10 +11,6 @@
 // Generate a unique name with the specified prefix.
 #define unique_name(PREFIX) concat_name(concat_name(PREFIX, __COUNTER__), __LINE__)
 
-// Define a function with the const attribute.
-// The function should be a pure function.
-#define constfunc __attribute__((const))
-
 #define is_same_type(A, B) __builtin_types_compatible_p(typeof(A), typeof(B))
 #define is_pointer_or_array(X) (__builtin_classify_type(X) == 5)
 #define decay(P) (&*__builtin_choose_expr(is_pointer_or_array(P), P, NULL))
@@ -34,6 +30,18 @@
         }                                                       \
         (unsigned long long)(sizeof(ARRAY) / sizeof(*(ARRAY))); \
     })
+
+//
+// Function attributes
+//
+
+// Define a function with the const attribute.
+// The function should be a pure function.
+#define constfunc __attribute__((const))
+
+// Define an init function that runs before main.
+// Useful for initializing global variables.
+#define initfunc __attribute__((constructor))
 
 //
 // __VA_ARGS__ HELPERS
