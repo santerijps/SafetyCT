@@ -39,9 +39,9 @@
 // The function should be a pure function.
 #define constfunc __attribute__((const))
 
-// Define an init function that runs before main.
+// Define a function that runs before main.
 // Useful for initializing global variables.
-#define initfunc __attribute__((constructor))
+#define init __attribute__((constructor)) void unique_name(init)(void)
 
 //
 // __VA_ARGS__ HELPERS
