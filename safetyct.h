@@ -8,18 +8,144 @@
 #define __concat_name(PREFIX, SUFFIX) PREFIX ## SUFFIX
 #define concat_name(PREFIX, SUFFIX) __concat_name(PREFIX, SUFFIX)
 
-// Macro for generating a unique name.
+// Generate a unique name with the specified prefix.
 #define unique_name(PREFIX) concat_name(concat_name(PREFIX, __COUNTER__), __LINE__)
-
-// Get the length of a stack allocated array.
-#define array_length(ARRAY) (sizeof(ARRAY) / sizeof(*ARRAY))
-
-// Get the biggest index value that can be used access array items.
-#define array_index_max(ARRAY) (len(ARRAY) - 1)
 
 // Define a function with the const attribute.
 // The function should be a pure function.
 #define constfunc __attribute__((const))
+
+#define is_same_type(A, B) __builtin_types_compatible_p(typeof(A), typeof(B))
+#define is_pointer_or_array(X) (__builtin_classify_type(X) == 5)
+#define decay(P) (&*__builtin_choose_expr(is_pointer_or_array(P), P, NULL))
+
+// Check if X is a pointer.
+// A stack allocated array returns false.
+#define is_pointer(X) is_same_type(X, decay(X))
+
+#define is_comptime_known(X) __builtin_constant_p(X)
+
+// Get the length of an array.
+// Crash if used on a pointer.
+#define array_length(ARRAY)                                     \
+    ({                                                          \
+        if (is_pointer(ARRAY)) {                                \
+            __crash("array_length", ARRAY);                     \
+        }                                                       \
+        (unsigned long long)(sizeof(ARRAY) / sizeof(*(ARRAY))); \
+    })
+
+//
+// __VA_ARGS__ HELPERS
+//
+
+#define args_count(ARGS...) (sizeof((int[]){ARGS}) / sizeof(int))
+#define args_get(INDEX, ARGS...) (((int[]){ARGS})[(INDEX)])
+#define args_has_index(INDEX, ARGS...) (args_count(ARGS) - 1 >= (INDEX))
+#define args_get_or_default(INDEX, DEFAULT, ARGS...) (args_has_index(INDEX, ARGS) ? args_get(INDEX, ARGS) : (DEFAULT))
+
+//
+// POINTER OPERATIONS
+//
+
+// Returns the pointer if it's not null, otherwise crashes the program.
+#define verify(POINTER)                     \
+    ({                                      \
+        if ((POINTER) == NULL) {            \
+            __crash("verify", # POINTER);   \
+        }                                   \
+        (POINTER);                          \
+    })
+
+// Returns the pointer if it's not null, otherwise throws.
+#define validate(POINTER, ERROR)            \
+    ({                                      \
+        if ((POINTER) == NULL) {            \
+            __throw("validate", ERROR);     \
+        }                                   \
+        (POINTER);                          \
+    })
+
+// Allocate memory for a new type with calloc.
+// The optional N specifies the number of elements of type T.
+// Crash if calloc fails.
+#define new(T, N...)                                        \
+    ({                                                      \
+        int n = args_get_or_default(0, 1, N);               \
+        void *p = calloc(n, sizeof(T));                     \
+        if (p == NULL) {                                    \
+            __crash("new", # T);                            \
+        }                                                   \
+        p;                                                  \
+    })
+
+// Resize heap allocation with realloc.
+// N is the number of elements desired.
+// Crash if pointer is NULL.
+#define resize(P, N)                        \
+    ({                                      \
+        if ((P) == NULL) {                  \
+            __crash("resize", # P)          \
+        }                                   \
+        P = realloc((P), sizeof(*P) * N);   \
+    })
+
+// Set the field of a heap allocated struct.
+// Crash if pointer is NULL.
+#define set(P, K, V)                \
+    do {                            \
+        if ((P) == NULL) {          \
+            __crash("set", # P);    \
+        }                           \
+        (P)->K = (V);               \
+    } while (0)
+
+// Get the field of a heap allocated struct.
+// Crash if pointer is NULL.
+#define get(P, K)                   \
+    ({                              \
+        if ((P) == NULL) {          \
+            __crash("get", # P);    \
+        }                           \
+        (P)->K;                     \
+    })
+
+// Zero out every field of a heap allocated struct.
+// Crash if pointer is NULL.
+#define clear(P)                    \
+    do {                            \
+        if ((P) == NULL) {          \
+            __crash("clear", # P);  \
+        }                           \
+        *(P) = (typeof(*(P))) {0};    \
+    } while(0)
+
+// Free a pointer and assign NULL to it.
+#define release(P)  \
+    do {            \
+        free(P);    \
+        (P) = NULL; \
+    } while (0)
+
+// Set the index of a pointer.
+// Crash if pointer is NULL.
+#define set_index(P, T, I, V)           \
+    do {                                \
+        if ((P) == NULL) {              \
+            __crash("set_index", # P);  \
+        }                               \
+        ((T*)(P))[I] = V;               \
+    } while (0)
+
+// Get the index of a pointer.
+// Crash if pointer is NULL.
+#define get_index(P, T, I)              \
+    ({                                  \
+        if ((P) == NULL) {              \
+            __crash("get_index", # P);  \
+        }                               \
+        (((T*)(P))[I]);                 \
+    })
 
 #define __traceback_leading_text "Traceback (most recent call last):\n"
 #define __traceback_error_format "    File %s, line %d, in function %s\n        %s %s\n"
@@ -340,27 +466,5 @@
 // Defer running statements until the end of the current scope if the condition is truthy.
 // If there are multiple defers in the same scope, they will be called in reverse order.
 #define defer_if(CONDITION, STATEMENT) __defer_if(CONDITION, STATEMENT, unique_name(__cleanup_var),  unique_name(__cleanup_func))
-
-//
-//  POINTER OPERATIONS
-//
-
-// Returns the pointer if it's not null, otherwise crashes the program.
-#define verify(POINTER)                     \
-    ({                                      \
-        if ((POINTER) == NULL) {            \
-            __crash("verify", # POINTER);   \
-        }                                   \
-        (POINTER);                          \
-    })
-
-// Returns the pointer if it's not null, otherwise throws.
-#define validate(POINTER, ERROR)            \
-    ({                                      \
-        if ((POINTER) == NULL) {            \
-            __throw("validate", ERROR);     \
-        }                                   \
-        (POINTER);                          \
-    })
 
 #endif
