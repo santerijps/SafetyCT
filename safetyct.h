@@ -41,7 +41,7 @@
 
 // Define a function that runs before main.
 // Useful for initializing global variables.
-#define init __attribute__((constructor)) void unique_name(init)(void)
+#define init __attribute__((constructor(__COUNTER__))) void unique_name(init)(void)
 
 //
 // __VA_ARGS__ HELPERS
