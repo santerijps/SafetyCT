@@ -1,5 +1,5 @@
-#ifndef SAFETYCT_BIT_H
-#define SAFETYCT_BIT_H
+#ifndef SAFETYCT_BITOPS_H
+#define SAFETYCT_BITOPS_H
 
 #define BIT_PRINT(x)                                                \
     for (unsigned long long i = 0; i < sizeof(x) * 8; i += 1) {     \
