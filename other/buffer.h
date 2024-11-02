@@ -19,9 +19,9 @@ typedef enum buffer_type {
  * The buffer can be used as a dynamic or static buffer.
  */
 typedef struct buffer {
-    BufferType type;        // Type of the buffer, either static or dynamic.
-    size_t cap, len;        // Capacity (total size) and length (used size).
-    unsigned char *ptr;     // Pointer to the underlying data.
+    BufferType type;    // Type of the buffer, either static or dynamic.
+    size_t cap, len;    // Capacity (total size) and length (used size).
+    char *ptr;          // Pointer to the underlying data.
 } Buffer;
 
 /**
@@ -137,7 +137,7 @@ BufferError buffer_grow(
  */
 BufferError buffer_write_byte(
     Buffer* const buffer,
-    const unsigned char byte
+    const char byte
 ) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
 

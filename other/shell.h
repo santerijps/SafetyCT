@@ -78,7 +78,7 @@ static inline int confirm(const char * const message) {
 static inline int prompt(
     const char* const message,
     char* const buffer,
-    unsigned long long buffer_size
+    size_t const buffer_size
 ) {
     printf("%s", message);
     fgets(buffer, buffer_size - 1, stdin);
