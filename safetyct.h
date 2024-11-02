@@ -49,6 +49,8 @@
 
 #define INITFUNC __attribute__((constructor(101 + __COUNTER__)))
 
+#define REQUIRE_RESULT __attribute__((warn_unused_result))
+
 // Define a function that runs before main.
 // Useful for initializing global variables.
 #define INIT INITFUNC void UNIQUE_NAME(init)(void)
