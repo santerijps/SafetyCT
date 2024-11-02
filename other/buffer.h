@@ -15,12 +15,13 @@ typedef enum buffer_type {
 
 /**
  * @name Buffer
- * @brief A multi-purpose buffer that grows as needed.
+ * @brief A multi-purpose buffer for writing bytes.
+ * The buffer can be used as a dynamic or static buffer.
  */
 typedef struct buffer {
-    BufferType type;
-    size_t cap, len;
-    unsigned char *ptr;
+    BufferType type;        // Type of the buffer, either static or dynamic.
+    size_t cap, len;        // Capacity (total size) and length (used size).
+    unsigned char *ptr;     // Pointer to the underlying data.
 } Buffer;
 
 /**
