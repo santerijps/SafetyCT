@@ -227,6 +227,13 @@
 
 #ifdef DEBUG
 
+    #define TRACE(expression)                                               \
+        ({                                                                  \
+            typeof(expression) evaluation = (expression);                   \
+            SCT_INTERNAL_TRACEBACK_PUSH("TRACE", expression, evaluation);   \
+            evaluation;                                                     \
+        })
+
     #define SCT_INTERNAL_TRACEBACK_COUNT_MAX 128
     #define SCT_INTERNAL_TRACEBACK_LENGTH_MAX 256
 
@@ -235,25 +242,29 @@
 
     #define SCT_INTERNAL_TRACEBACK_RESET sct_internal_traceback_count = 0;
 
-    #define SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)                            \
-        if (sct_internal_traceback_count < SCT_INTERNAL_TRACEBACK_COUNT_MAX) {                          \
-            snprintf(                                                                                   \
-                (char*) &sct_internal_traceback[sct_internal_traceback_count++],                        \
-                SCT_INTERNAL_TRACEBACK_LENGTH_MAX,                                                      \
-                SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT(evaluation),                                      \
-                __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation \
-            );                                                                                          \
-        }
+    #define SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)                                \
+        do {                                                                                                \
+            if (sct_internal_traceback_count < SCT_INTERNAL_TRACEBACK_COUNT_MAX) {                          \
+                snprintf(                                                                                   \
+                    (char*) &sct_internal_traceback[sct_internal_traceback_count++],                        \
+                    SCT_INTERNAL_TRACEBACK_LENGTH_MAX,                                                      \
+                    SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT(evaluation),                                      \
+                    __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation \
+                );                                                                                          \
+            }                                                                                               \
+        } while (0);
 
-    #define SCT_INTERNAL_TRACEBACK_PUSH_WITH_ERROR(description, expression, evaluation, error)                  \
-        if (sct_internal_traceback_count < SCT_INTERNAL_TRACEBACK_COUNT_MAX) {                                  \
-            snprintf(                                                                                           \
-                (char*) &sct_internal_traceback[sct_internal_traceback_count++],                                \
-                SCT_INTERNAL_TRACEBACK_LENGTH_MAX,                                                              \
-                SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT_WITH_ERROR(evaluation),                                   \
-                __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation, TO_STRING(error)  \
-            );                                                                                                  \
-        }
+    #define SCT_INTERNAL_TRACEBACK_PUSH_WITH_ERROR(description, expression, evaluation, error)                                  \
+        do {                                                                                                                    \
+            if (sct_internal_traceback_count < SCT_INTERNAL_TRACEBACK_COUNT_MAX) {                                              \
+                snprintf(                                                                                                       \
+                    (char*) &sct_internal_traceback[sct_internal_traceback_count++],                                            \
+                    SCT_INTERNAL_TRACEBACK_LENGTH_MAX,                                                                          \
+                    SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT_WITH_ERROR(evaluation),                                               \
+                    __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation, TO_STRING(error)   \
+                );                                                                                                              \
+            }                                                                                                                   \
+        } while (0);
 
     #define SCT_INTERNAL_TRACEBACK_PRINT(description, expression,evaluation)    \
         do {                                                                    \
@@ -264,6 +275,7 @@
 
 #else
 
+    #define TRACE(expression)
     #define SCT_INTERNAL_TRACEBACK_RESET
     #define SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)
     #define SCT_INTERNAL_TRACEBACK_PUSH_WITH_ERROR(description, expression, evaluation, error)
@@ -391,7 +403,7 @@
 #define SCT_INTERNAL_THROW(description, expression, evaluation)             \
     do {                                                                    \
         SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)    \
-        return expression;                                                  \
+        return evaluation;                                                  \
     } while (0)
 
 #define SCT_INTERNAL_THROW_AS(description, expression, evaluation, error)                   \
@@ -409,8 +421,9 @@
 #define THROW_IF(condition, error)                                          \
     do {                                                                    \
         if (condition) {                                                    \
-            SCT_INTERNAL_THROW_AS("THROW_IF", condition, condition, error); \
+            SCT_INTERNAL_THROW_AS("THROW_IF", condition, error, error);     \
         }                                                                   \
+        SCT_INTERNAL_TRACEBACK_RESET                                        \
     } while (0)
 
 #define THROW_SOME(expression)                                          \
@@ -419,6 +432,7 @@
         if (evaluation != 0) {                                          \
             SCT_INTERNAL_THROW("THROW_SOME", expression, evaluation);   \
         }                                                               \
+        SCT_INTERNAL_TRACEBACK_RESET                                    \
     } while (0)
 
 #define THROW_SOME_AS(expression, error)                                            \
@@ -427,6 +441,7 @@
         if (evaluation != 0) {                                                      \
             SCT_INTERNAL_THROW_AS("THROW_SOME_AS", expression, evaluation, error);  \
         }                                                                           \
+        SCT_INTERNAL_TRACEBACK_RESET                                                \
     } while (0)
 
 #define THROW_CASE(x)                               \
@@ -460,6 +475,7 @@
         if (evaluation) {                                           \
             SCT_INTERNAL_CRASH("CRASH_IF", condition, evaluation);  \
         }                                                           \
+        SCT_INTERNAL_TRACEBACK_RESET                                \
     } while (0)
 
 #define CRASH_SOME(expression)                                          \
@@ -468,6 +484,7 @@
         if (evaluation != 0) {                                          \
             SCT_INTERNAL_CRASH("CRASH_SOME", expression, evaluation);   \
         }                                                               \
+        SCT_INTERNAL_TRACEBACK_RESET                                    \
     } while (0)
 
 #define CRASH_CASE(x)                           \
