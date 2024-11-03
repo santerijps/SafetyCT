@@ -275,7 +275,7 @@
 
 #else
 
-    #define TRACE(expression)
+    #define TRACE(expression) expression
     #define SCT_INTERNAL_TRACEBACK_RESET
     #define SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)
     #define SCT_INTERNAL_TRACEBACK_PUSH_WITH_ERROR(description, expression, evaluation, error)
