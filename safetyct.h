@@ -45,7 +45,7 @@
 
 // Define a function with the const attribute.
 // The function should be a pure function.
-#define CONSTFUNC __attribute__((const))
+#define CONSTFUNC __attribute__((const, warn_unused_result))
 
 #define INITFUNC __attribute__((constructor(101 + __COUNTER__)))
 
@@ -54,6 +54,8 @@
 // Define a function that runs before main.
 // Useful for initializing global variables.
 #define INIT INITFUNC void UNIQUE_NAME(init)(void)
+
+#define CAST(x, type) ((type)(x))
 
 //
 // MACRO UTILS
