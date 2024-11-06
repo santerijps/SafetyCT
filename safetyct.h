@@ -399,6 +399,13 @@
 #endif
 
 //
+//  PRINTING
+//
+
+#define ERRORF(format, args...) fprintf(stderr, format, ## args)
+#define PANICF(format, args...) do { ERRORF(format, ## args); exit(1); } while (0)
+
+//
 //  THROW
 //
 
