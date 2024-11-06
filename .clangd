@@ -6,7 +6,9 @@ Index:
 
 Diagnostics:
     Suppress:
+        - function_definition_not_allowed
         - typecheck_convert_incompatible
+        - undeclared_var_use
         - unused-includes
 
 InlayHints:

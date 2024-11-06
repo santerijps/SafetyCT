@@ -29,15 +29,8 @@
         GCC_DIAGNOSTIC_WARNING("-Wnonnull")             \
     })
 
-// Get the length of an array.
-// Crash if used on a pointer.
-#define ARRAY_LENGTH(array)                                         \
-    ({                                                              \
-        if (IS_POINTER(array)) {                                    \
-            SCT_INTERNAL_CRASH("ARRAY_LENGTH", array, array);       \
-        }                                                           \
-        (unsigned long long)(sizeof(array) / sizeof(*(array)));     \
-    })
+#define CAST(value, type) ((type)(value))
+#define ARRAY_LENGTH(array) ((unsigned long long)(sizeof(array) / sizeof(*(array))))
 
 //
 // FUNCTION ATTRIBUTES
@@ -54,8 +47,6 @@
 // Define a function that runs before main.
 // Useful for initializing global variables.
 #define INIT INITFUNC void UNIQUE_NAME(init)(void)
-
-#define CAST(x, type) ((type)(x))
 
 //
 // MACRO UTILS
@@ -104,6 +95,8 @@
 //
 // POINTER OPERATIONS
 //
+
+#define DEREF(x) (*(x))
 
 // Allocate memory for a new type with calloc.
 // The optional count specifies the number of elements.
@@ -192,12 +185,16 @@
         (pointer) = NULL;   \
     } while (0)
 
-#define SCT_INTERNAL_TRACEBACK_LEADING_TEXT \
+#define SCT_INTERNAL_TRACEBACK_LEADING_TEXT     \
     "Traceback (most recent call last):\n"
 
 #define SCT_INTERNAL_TRACEBACK_ERROR_FORMAT     \
     "    File %s, line %d, in function %s\n"    \
     "        %s %s"
+
+#define SCT_INTERNAL_TRACEBACK_ERRORF_FORMAT    \
+    "    File %s, line %d, in function %s\n"    \
+    "        %s"
 
 #define SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT(evaluation)                       \
     _Generic((evaluation),                                                      \
@@ -236,7 +233,7 @@
             evaluation;                                                     \
         })
 
-    #define SCT_INTERNAL_TRACEBACK_COUNT_MAX 128
+    #define SCT_INTERNAL_TRACEBACK_COUNT_MAX 256
     #define SCT_INTERNAL_TRACEBACK_LENGTH_MAX 256
 
     static int sct_internal_traceback_count __attribute__ ((unused)) = 0;
@@ -244,36 +241,51 @@
 
     #define SCT_INTERNAL_TRACEBACK_RESET sct_internal_traceback_count = 0;
 
-    #define SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)                                \
-        do {                                                                                                \
-            if (sct_internal_traceback_count < SCT_INTERNAL_TRACEBACK_COUNT_MAX) {                          \
-                snprintf(                                                                                   \
-                    (char*) &sct_internal_traceback[sct_internal_traceback_count++],                        \
-                    SCT_INTERNAL_TRACEBACK_LENGTH_MAX,                                                      \
-                    SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT(evaluation),                                      \
-                    __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation \
-                );                                                                                          \
-            }                                                                                               \
+    // TODO: Else crash? At least warn that the traceback count has been reached
+    #define SCT_INTENRAL_TRACEBACK_PUSH_FORMAT(format, args...)                         \
+        do {                                                                            \
+            if (sct_internal_traceback_count < SCT_INTERNAL_TRACEBACK_COUNT_MAX) {      \
+                snprintf(                                                               \
+                    (char*) &sct_internal_traceback[sct_internal_traceback_count++],    \
+                    SCT_INTERNAL_TRACEBACK_LENGTH_MAX,                                  \
+                    format,                                                             \
+                    ## args                                                             \
+                );                                                                      \
+            }                                                                           \
         } while (0);
 
-    #define SCT_INTERNAL_TRACEBACK_PUSH_WITH_ERROR(description, expression, evaluation, error)                                  \
-        do {                                                                                                                    \
-            if (sct_internal_traceback_count < SCT_INTERNAL_TRACEBACK_COUNT_MAX) {                                              \
-                snprintf(                                                                                                       \
-                    (char*) &sct_internal_traceback[sct_internal_traceback_count++],                                            \
-                    SCT_INTERNAL_TRACEBACK_LENGTH_MAX,                                                                          \
-                    SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT_WITH_ERROR(evaluation),                                               \
-                    __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation, TO_STRING(error)   \
-                );                                                                                                              \
-            }                                                                                                                   \
-        } while (0);
+    #define SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)                        \
+        SCT_INTENRAL_TRACEBACK_PUSH_FORMAT(                                                         \
+            SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT(evaluation),                                      \
+            __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation \
+        )
 
-    #define SCT_INTERNAL_TRACEBACK_PRINT(description, expression,evaluation)    \
+    #define SCT_INTERNAL_TRACEBACK_PUSH_WITH_ERROR(description, expression, evaluation, error)                          \
+        SCT_INTENRAL_TRACEBACK_PUSH_FORMAT(                                                                             \
+            SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT_WITH_ERROR(evaluation),                                               \
+            __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation, TO_STRING(error)   \
+        )
+
+    #define SCT_INTERNAL_TRACEBACK_PUSHF(description, format, args...)          \
+        SCT_INTENRAL_TRACEBACK_PUSH_FORMAT(                                     \
+            SCT_INTERNAL_TRACEBACK_ERRORF_FORMAT "\n        " format,           \
+            __FILE__, __LINE__, __PRETTY_FUNCTION__, description, ## args       \
+        )
+
+    #define SCT_INTERNAL_TRACEBACK_PUSHF_WITH_ERROR(description, error, format, args...)    \
+        SCT_INTENRAL_TRACEBACK_PUSH_FORMAT(                                                 \
+            SCT_INTERNAL_TRACEBACK_ERRORF_FORMAT "-> %s\n        " format,                  \
+            __FILE__, __LINE__, __PRETTY_FUNCTION__, description, # error, ## args          \
+        )
+
+    #define SCT_INTERNAL_TRACEBACK_PRINT(description, expression, evaluation)   \
         do {                                                                    \
             fprintf(stderr, SCT_INTERNAL_TRACEBACK_LEADING_TEXT);               \
             for (int i = 0; i < sct_internal_traceback_count; i += 1)           \
                 fprintf(stderr, "%s", sct_internal_traceback[i]);               \
         } while (0);
+
+    #define SCT_INTERNAL_TRACEBACK_PRINTF(description, format, args...) SCT_INTERNAL_TRACEBACK_PRINT(0, 0, 0)
 
 #else
 
@@ -281,6 +293,8 @@
     #define SCT_INTERNAL_TRACEBACK_RESET
     #define SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)
     #define SCT_INTERNAL_TRACEBACK_PUSH_WITH_ERROR(description, expression, evaluation, error)
+    #define SCT_INTERNAL_TRACEBACK_PUSHF(description, format, args...)
+    #define SCT_INTERNAL_TRACEBACK_PUSHF_WITH_ERROR(description, error, format, args...)
 
     #define SCT_INTERNAL_TRACEBACK_PRINT(description, expression, evaluation)                               \
         do {                                                                                                \
@@ -290,6 +304,19 @@
                 SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT(evaluation),                                          \
                 __FILE__, __LINE__, __PRETTY_FUNCTION__, description, TO_STRING(expression), evaluation     \
             );                                                                                              \
+        } while (0);
+
+    #define SCT_INTERNAL_TRACEBACK_PRINTF(description, format, args...) \
+        do {                                                            \
+            fprintf(stderr, SCT_INTERNAL_TRACEBACK_LEADING_TEXT);       \
+            fprintf(                                                    \
+                stderr,                                                 \
+                SCT_INTERNAL_TRACEBACK_ERRORF_FORMAT "\n"               \
+                "        "                                              \
+                format,                                                 \
+                __FILE__, __LINE__, __PRETTY_FUNCTION__, description,   \
+                ## args                                                 \
+            );                                                          \
         } while (0);
 
 #endif
@@ -461,6 +488,22 @@
     case (x):                                       \
         SCT_INTERNAL_THROW("THROW_CASE_AS", y, x)
 
+#define SCT_INTERNAL_THROWF(description, error, format, args...)                        \
+    do {                                                                                \
+        ERRORF(format, ## args);                                                        \
+        SCT_INTERNAL_TRACEBACK_PUSHF_WITH_ERROR(description, error, format, ## args)    \
+        return error;                                                                   \
+    } while (0)
+
+#define THROWF(error, format, args...) SCT_INTERNAL_THROWF("THROWF", format, ## args)
+
+#define THROWF_IF(condition, error, format, args...)                                    \
+    do {                                                                                \
+        if (condition) {                                                                \
+            SCT_INTERNAL_THROWF("THROWF_IF " # condition " ", error, format, ## args);  \
+        }                                                                               \
+    } while (0)
+
 //
 //  CRASH
 //
@@ -499,6 +542,22 @@
 #define CRASH_CASE(x)                           \
     case (x):                                   \
         SCT_INTERNAL_CRASH("CRASH_CASE", x, x)
+
+#define SCT_INTERNAL_CRASHF(description, format, args...)           \
+    do {                                                            \
+        SCT_INTERNAL_TRACEBACK_PUSHF(description, format, ## args)  \
+        SCT_INTERNAL_TRACEBACK_PRINTF(description, format, ## args) \
+        exit(1);                                                    \
+    } while (0)
+
+#define CRASHF(format, args...) SCT_INTERNAL_CRASHF("CRASHF", format, ## args)
+
+#define CRASHF_IF(condition, format, args...)                                       \
+    do {                                                                            \
+        if (condition) {                                                            \
+            SCT_INTERNAL_CRASHF("CRASHF_IF " # condition " ", format, ## args);     \
+        }                                                                           \
+    } while (0)
 
 //
 //  DEFER
