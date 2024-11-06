@@ -1,0 +1,18 @@
+CompileFlags:
+    Add: [-Wall, -Wextra]
+
+Index:
+    Background: Skip
+
+Diagnostics:
+    Suppress:
+        - typecheck_convert_incompatible
+        - unused-includes
+
+InlayHints:
+    BlockEnd: No
+    Designators: No
+    ParameterNames: No
+
+Hover:
+    ShowAKA: Yes
