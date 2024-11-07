@@ -96,21 +96,22 @@
 // POINTER OPERATIONS
 //
 
+#define ADDR(x) (&(x))
 #define DEREF(x) (*(x))
 
 // Allocate memory for a new type with calloc.
 // The optional count specifies the number of elements.
 // Crash if calloc fails.
-#define NEW(type, count...)                                             \
-    ({                                                                  \
-        GCC_DIAGNOSTIC_IGNORED("-Wint-conversion")                      \
-        int n = ARGS_GET_OR_DEFAULT(0, 1, count);                       \
-        void *pointer = calloc(n, sizeof(type));                        \
-        if (pointer == NULL) {                                          \
-            SCT_INTERNAL_CRASH("NEW calloc error", TO_STRING(type));    \
-        }                                                               \
-        pointer;                                                        \
-        GCC_DIAGNOSTIC_WARNING("-Wint-conversion")                      \
+#define NEW(type, count...)                                                     \
+    ({                                                                          \
+        GCC_DIAGNOSTIC_IGNORED("-Wint-conversion")                              \
+        int n = ARGS_GET_OR_DEFAULT(0, 1, count);                               \
+        void *pointer = calloc(n, sizeof(type));                                \
+        if (pointer == NULL) {                                                  \
+            SCT_INTERNAL_CRASH("NEW calloc error", TO_STRING(type), pointer);   \
+        }                                                                       \
+        pointer;                                                                \
+        GCC_DIAGNOSTIC_WARNING("-Wint-conversion")                              \
     })
 
 // Resize heap allocation with realloc.
@@ -205,7 +206,8 @@
         long long: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => %lld\n",            \
         unsigned: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => %u\n",               \
         unsigned long long: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => %llu\n",   \
-        char*: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => \"%s\"\n"               \
+        char*: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => \"%s\"\n",              \
+        default: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => %p\n"                 \
     )
 
 #define SCT_INTERNAL_TRACEBACK_RESOLVE_FORMAT_WITH_ERROR(evaluation)                \
@@ -217,7 +219,8 @@
         long long: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => %lld -> %s\n",          \
         unsigned: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => %u -> %s\n",             \
         unsigned long long: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => %llu -> %s\n", \
-        char*: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => \"%s\" -> %s\n"             \
+        char*: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => \"%s\" -> %s\n",            \
+        default: SCT_INTERNAL_TRACEBACK_ERROR_FORMAT " => %p -> %s\n"               \
     )
 
 //
@@ -512,7 +515,7 @@
     do {                                                                    \
         SCT_INTERNAL_TRACEBACK_PUSH(description, expression, evaluation)    \
         SCT_INTERNAL_TRACEBACK_PRINT(description, expression, evaluation)   \
-        exit(_Generic(evaluation, char*: 1, default: evaluation));          \
+        exit(1);                                                            \
     } while (0)
 
 #define CRASH(expression)                                       \
