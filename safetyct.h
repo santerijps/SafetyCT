@@ -98,6 +98,7 @@
 
 #define ADDR(x) (&(x))
 #define DEREF(x) (*(x))
+#define ZEROES(pointer, size) for (size_t i = 0; i < size; i += 1) pointer[i] = 0
 
 // Allocate memory for a new type with calloc.
 // The optional count specifies the number of elements.
