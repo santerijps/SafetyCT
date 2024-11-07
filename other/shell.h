@@ -83,8 +83,10 @@ static inline int prompt(
     printf("%s", message);
     fgets(buffer, buffer_size - 1, stdin);
     for (long long i = buffer_size - 1; i >= 0; i -= 1) {
-        if (buffer[i] == '\n') {
-            buffer[i] = '\0';
+        if (buffer[i] != '\0') {
+            if (buffer[i] == '\n') {
+                buffer[i] = '\0';
+            }
             break;
         }
     }
