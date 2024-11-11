@@ -5,6 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+//
+//  PRINTING
+//
+
+#define ERRORF(format, args...) fprintf(stderr, format, ## args)
+#define PANICF(format, args...) do { ERRORF(format, ## args); exit(1); } while (0)
+
 #define SCT_INTERNAL_CONCAT(prefix, suffix) prefix ## suffix
 #define CONCAT(prefix, suffix) SCT_INTERNAL_CONCAT(prefix, suffix)
 
@@ -36,27 +43,24 @@
 // FUNCTION ATTRIBUTES
 //
 
-// Define a function with the const attribute.
-// The function should be a pure function.
 #define CONSTFUNC __attribute__((const, warn_unused_result))
-
 #define INITFUNC __attribute__((constructor(101 + __COUNTER__)))
-
 #define REQUIRE_RESULT __attribute__((warn_unused_result))
-
-// Define a function that runs before main.
-// Useful for initializing global variables.
 #define INIT INITFUNC void UNIQUE_NAME(init)(void)
-
-//
-// MACRO UTILS
-//
 
 #define TO_STRING(x) # x
 #define TO_ARRAY(args...) ((void*[]){args})
 
+//
+//  GGC DIAGNOSTIC PRAGMAS
+//
+
 #define GCC_DIAGNOSTIC_IGNORED(x) _Pragma(TO_STRING(GCC diagnostic ignored x))
 #define GCC_DIAGNOSTIC_WARNING(x) _Pragma(TO_STRING(GCC diagnostic warning x))
+
+//
+//  VA ARGS
+//
 
 #define ARGS_COUNT(args...)                         \
     ({                                              \
@@ -93,99 +97,8 @@
     })
 
 //
-// POINTER OPERATIONS
+//  TRACEBACK
 //
-
-#define ADDR(x) (&(x))
-#define DEREF(x) (*(x))
-#define ZEROES(pointer, size) for (size_t i = 0; i < size; i += 1) pointer[i] = 0
-
-// Allocate memory for a new type with calloc.
-// The optional count specifies the number of elements.
-// Crash if calloc fails.
-#define NEW(type, count...)                                                     \
-    ({                                                                          \
-        GCC_DIAGNOSTIC_IGNORED("-Wint-conversion")                              \
-        int n = ARGS_GET_OR_DEFAULT(0, 1, count);                               \
-        void *pointer = calloc(n, sizeof(type));                                \
-        if (pointer == NULL) {                                                  \
-            SCT_INTERNAL_CRASH("NEW calloc error", TO_STRING(type), pointer);   \
-        }                                                                       \
-        pointer;                                                                \
-        GCC_DIAGNOSTIC_WARNING("-Wint-conversion")                              \
-    })
-
-// Resize heap allocation with realloc.
-// N is the number of elements desired.
-// Crash if pointer is NULL.
-#define RESIZE(pointer, count)                                                      \
-    ({                                                                              \
-        if ((pointer) == NULL) {                                                    \
-            SCT_INTERNAL_CRASH("RESIZE null pointer", pointer, TO_STRING(pointer))  \
-        }                                                                           \
-        pointer = realloc((pointer), sizeof(*pointer) * count);                     \
-        if ((pointer) == NULL) {                                                    \
-            SCT_INTERNAL_CRASH("RESIZE realloc error", pointer, TO_STRING(pointer)) \
-        }                                                                           \
-        pointer;                                                                    \
-    })
-
-// Set the field of a heap allocated struct.
-// Crash if pointer is NULL.
-#define SET_FIELD(pointer, field, value)                                    \
-    do {                                                                    \
-        if ((pointer) == NULL) {                                            \
-            SCT_INTERNAL_CRASH("SET_FIELD", pointer, TO_STRING(pointer));   \
-        }                                                                   \
-        (pointer)->field = (value);                                         \
-    } while (0)
-
-// Get the field of a heap allocated struct.
-// Crash if pointer is NULL.
-#define GET_FIELD(pointer, field)                                           \
-    ({                                                                      \
-        if ((pointer) == NULL) {                                            \
-            SCT_INTERNAL_CRASH("GET_FIELD", pointer, TO_STRING(pointer));   \
-        }                                                                   \
-        (pointer)->field;                                                   \
-    })
-
-// Set the index of a pointer.
-// Crash if pointer is NULL.
-#define SET_INDEX(pointer, index, value)                                    \
-    do {                                                                    \
-        if ((pointer) == NULL) {                                            \
-            SCT_INTERNAL_CRASH("SET_INDEX", pointer, TO_STRING(pointer));   \
-        }                                                                   \
-        (pointer)[index] = (value);                                         \
-    } while (0)
-
-// Get the index of a pointer.
-// Crash if pointer is NULL.
-#define GET_INDEX(pointer, index)                                           \
-    ({                                                                      \
-        if ((pointer) == NULL) {                                            \
-            SCT_INTERNAL_CRASH("GET_INDEX", pointer, TO_STRING(pointer));   \
-        }                                                                   \
-        (((pointer)[index]);                                                \
-    })
-
-// Zero out every field of a heap allocated struct.
-// Crash if pointer is NULL.
-#define CLEAR(pointer)                                                  \
-    do {                                                                \
-        if ((pointer) == NULL) {                                        \
-            SCT_INTERNAL_CRASH("CLEAR", pointer, TO_STRING(pointer));   \
-        }                                                               \
-        *(pointer) = (typeof(*(pointer))) {0};                          \
-    } while(0)
-
-// Free a pointer and assign NULL to it.
-#define RELEASE(pointer)    \
-    do {                    \
-        free(pointer);      \
-        (pointer) = NULL;   \
-    } while (0)
 
 #define SCT_INTERNAL_TRACEBACK_LEADING_TEXT     \
     "Traceback (most recent call last):\n"
@@ -229,6 +142,10 @@
 //
 
 #ifdef DEBUG
+
+    //
+    //  TRACEBACK
+    //
 
     #define TRACE(expression)                                               \
         ({                                                                  \
@@ -291,7 +208,105 @@
 
     #define SCT_INTERNAL_TRACEBACK_PRINTF(description, format, args...) SCT_INTERNAL_TRACEBACK_PRINT(0, 0, 0)
 
+    //
+    //  INTERNAL MEMORY ALLOCATION
+    //
+
+    // Must not be divisible by 8, sizeof(void*)
+    #define SCTI_ALLOC_SIZE 1019
+    #define SCTI_ALLOC_INFO_SIZE 64
+    #define SCTI_ALLOC_HASH(pointer) (((size_t)pointer) % SCTI_ALLOC_SIZE)
+
+    static void const* scti_alloc_pointers[SCTI_ALLOC_SIZE];
+    static size_t scti_alloc_counts[SCTI_ALLOC_SIZE];                           // element count
+    static size_t scti_alloc_sizes[SCTI_ALLOC_SIZE];                            // element size
+    static char scti_alloc_infos[SCTI_ALLOC_SIZE][SCTI_ALLOC_INFO_SIZE];
+    static size_t scti_alloc_count = 0;
+    static int scti_alloc_destruct = 1;
+
+    #define SCTI_ALLOC_SET_INDEX(pointer, count, size)      \
+        do {                                                \
+            size_t const hash = SCTI_ALLOC_HASH(pointer);   \
+            if (scti_alloc_pointers[hash] != 0) {           \
+                scti_alloc_destruct = 0;                    \
+                SCT_INTERNAL_CRASHF(                        \
+                    "ALLOC_SET_INDEX",                      \
+                    "Hash collision!\n"                     \
+                );                                          \
+            }                                               \
+            scti_alloc_pointers[hash] = pointer;            \
+            scti_alloc_counts[hash] = count;                \
+            scti_alloc_sizes[hash] = size;                  \
+            sprintf(                                        \
+                scti_alloc_infos[hash],                     \
+                "file %s, line %d, in function %s",         \
+                __FILE__, __LINE__, __PRETTY_FUNCTION__     \
+            );                                              \
+            scti_alloc_count += 1;                          \
+        } while (0);
+
+    #define SCTI_ALLOC_UNSET_INDEX(pointer)                             \
+        do {                                                            \
+            size_t const hash = SCTI_ALLOC_HASH(pointer);               \
+            if (scti_alloc_pointers[hash] == 0) {                       \
+                scti_alloc_destruct = 0;                                \
+                SCT_INTERNAL_CRASHF(                                    \
+                    "ALLOC_UNSET_INDEX",                                \
+                    "Hash not found!\n"                                 \
+                );                                                      \
+            }                                                           \
+            scti_alloc_pointers[hash] = 0;                              \
+            scti_alloc_counts[hash] = 0;                                \
+            scti_alloc_sizes[hash] = 0;                                 \
+            memset(scti_alloc_infos[hash], 0, SCTI_ALLOC_INFO_SIZE);    \
+            scti_alloc_count -= 1;                                      \
+        } while (0);
+
+    #define SCTI_ALLOC_BOUNDS_CHECK(pointer, index)             \
+        do {                                                    \
+            size_t const hash = SCTI_ALLOC_HASH(pointer);       \
+            if (scti_alloc_pointers[hash] == 0) {               \
+                break;                                          \
+            }                                                   \
+            if (index >= scti_alloc_counts[hash]) {             \
+                scti_alloc_destruct = 0;                        \
+                SCT_INTERNAL_CRASHF(                            \
+                    "ALLOC_BOUNDS_CHECK",                       \
+                    "Index out of bounds: %llu > %llu\n",       \
+                    (size_t)index, scti_alloc_counts[hash] - 1  \
+                );                                              \
+            }                                                   \
+        } while (0);
+
+    __attribute__((destructor))
+    static inline void scti_check_for_leaks(void) {
+        void const* pointer;
+        size_t count, size;
+        char const* info;
+
+        if (!scti_alloc_destruct || scti_alloc_count == 0) {
+            return;
+        }
+
+        fprintf(stderr, "\e[31m\nMemory leaks:\n");
+
+        for (int i = 0; i < SCTI_ALLOC_SIZE; i += 1) {
+            pointer = scti_alloc_pointers[i];
+
+            if (pointer != 0) {
+                count = scti_alloc_counts[i];
+                size = scti_alloc_sizes[i];
+                info = scti_alloc_infos[i];
+                fprintf(stderr, "  %10llu bytes allocated in %s\n", count * size, info);
+            }
+        }
+    }
+
 #else
+
+    //
+    //  TRACEBACK
+    //
 
     #define TRACE(expression) expression
     #define SCT_INTERNAL_TRACEBACK_RESET
@@ -322,6 +337,14 @@
                 ## args                                                 \
             );                                                          \
         } while (0);
+
+    //
+    //  INTERNAL MEMORY ALLOCATION
+    //
+
+    #define SCTI_ALLOC_SET_INDEX(pointer, count, size)
+    #define SCTI_ALLOC_UNSET_INDEX(pointer)
+    #define SCTI_ALLOC_BOUNDS_CHECK(pointer, index)
 
 #endif
 
@@ -430,11 +453,42 @@
 #endif
 
 //
-//  PRINTING
+//  MEMORY ALLOCATION
 //
 
-#define ERRORF(format, args...) fprintf(stderr, format, ## args)
-#define PANICF(format, args...) do { ERRORF(format, ## args); exit(1); } while (0)
+#define MALLOC(count, type)                                     \
+    ({                                                          \
+        void* const pointer = malloc(sizeof(type) * (count));   \
+        SCTI_ALLOC_SET_INDEX(pointer, count, sizeof(type))      \
+        pointer;                                                \
+    })
+
+#define CALLOC(count, type)                                 \
+    ({                                                      \
+        void* const pointer = calloc(count, sizeof(type));  \
+        SCTI_ALLOC_SET_INDEX(pointer, count, sizeof(type))  \
+        pointer;                                            \
+    })
+
+#define REALLOC(pointer, count, type)                                       \
+    ({                                                                      \
+        SCTI_ALLOC_UNSET_INDEX(pointer)                                     \
+        void* const new_pointer = realloc(pointer, sizeof(type) * (count)); \
+        SCTI_ALLOC_SET_INDEX(new_pointer, count, sizeof(type))              \
+        new_pointer;                                                        \
+    })
+
+#define FREE(pointer)                       \
+    do {                                    \
+        SCTI_ALLOC_UNSET_INDEX(pointer)     \
+        free(pointer);                      \
+    } while (0)
+
+#define DEREF(pointer, index)                       \
+    *({                                             \
+        SCTI_ALLOC_BOUNDS_CHECK((pointer), (index)) \
+        (pointer) + (index);                        \
+    })
 
 //
 //  THROW
