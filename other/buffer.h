@@ -137,7 +137,7 @@ BufferError buffer_grow(
  */
 BufferError buffer_write_byte(
     Buffer* const buffer,
-    char const byte
+    unsigned char const byte
 ) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
 
@@ -161,7 +161,7 @@ BufferError buffer_write_byte(
  */
 BufferError buffer_write_bytes(
     Buffer* const buffer,
-    char const* const bytes,
+    unsigned char const* const bytes,
     size_t const count
 ) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
@@ -193,7 +193,7 @@ BufferError buffer_write_string(
     char const* const string
 ) {
     size_t count = strlen(string);
-    return buffer_write_bytes(buffer, string, count);
+    return buffer_write_bytes(buffer, (unsigned char*)string, count);
 }
 
 #endif
