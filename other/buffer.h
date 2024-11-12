@@ -21,7 +21,7 @@ typedef enum buffer_type {
 typedef struct buffer {
     BufferType type;    // Type of the buffer, either static or dynamic.
     size_t cap, len;    // Capacity (total size) and length (used size).
-    char *ptr;          // Pointer to the underlying data.
+    void *ptr;          // Pointer to the underlying data.
 } Buffer;
 
 /**
@@ -149,7 +149,7 @@ BufferError buffer_write_byte(
         return BUFFER_ERROR_CAPACITY_FULL;
     }
 
-    buffer->ptr[buffer->len] = byte;
+    ((char*)buffer->ptr)[buffer->len] = byte;
     buffer->len += 1;
 
     return BUFFER_ERROR_NONE;
@@ -177,7 +177,7 @@ BufferError buffer_write_bytes(
     }
 
     for (size_t i = 0; i < count; i += 1) {
-        buffer->ptr[buffer->len] = bytes[i];
+        ((char*)buffer->ptr)[buffer->len] = bytes[i];
         buffer->len += 1;
     }
 
