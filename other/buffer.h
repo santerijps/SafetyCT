@@ -45,7 +45,7 @@ typedef enum buffer_error {
  */
 __attribute__((warn_unused_result)) BufferError buffer_init_dynamic(
     Buffer* const buffer,
-    const size_t capacity
+    size_t const capacity
 ) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
     if (capacity == 0) return BUFFER_ERROR_ZERO_CAPACITY;
@@ -69,7 +69,7 @@ __attribute__((warn_unused_result)) BufferError buffer_init_dynamic(
 BufferError buffer_init_static(
     Buffer* const buffer,
     void* const pointer,
-    const size_t capacity
+    size_t const capacity
 ) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
     if (pointer == NULL) return BUFFER_ERROR_NULL_POINTER;
@@ -117,7 +117,7 @@ BufferError buffer_deinit(Buffer* const buffer) {
  */
 BufferError buffer_grow(
     Buffer* const buffer,
-    const size_t capacity
+    size_t const capacity
 ) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
     if (buffer->type == BUFFER_TYPE_STATIC || buffer->cap > capacity) return BUFFER_ERROR_NONE;
@@ -137,7 +137,7 @@ BufferError buffer_grow(
  */
 BufferError buffer_write_byte(
     Buffer* const buffer,
-    const char byte
+    char const byte
 ) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
 
@@ -161,8 +161,8 @@ BufferError buffer_write_byte(
  */
 BufferError buffer_write_bytes(
     Buffer* const buffer,
-    const char* const bytes,
-    const size_t count
+    char const* const bytes,
+    size_t const count
 ) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
     if (bytes == NULL) return BUFFER_ERROR_NULL_BYTES;
@@ -190,7 +190,7 @@ BufferError buffer_write_bytes(
  */
 BufferError buffer_write_string(
     Buffer* const buffer,
-    const char* const string
+    char const* const string
 ) {
     size_t count = strlen(string);
     return buffer_write_bytes(buffer, string, count);
