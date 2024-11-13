@@ -154,6 +154,9 @@
 #define TERMS_CURSOR_SAVE "\e7" // or s
 #define TERMS_CURSOR_RESTORE "\e8" // or u
 
+#define TERMS_CURSOR_HIDE "\e[?25l"
+#define TERMS_CURSOR_SHOW "\e[?25h"
+
 #define TERM_CURSOR_POS_HOME() TERM_WRITE_LITERAL(TERMS_CURSOR_POS_HOME)
 #define TERM_CURSOR_POS_SET(line, column) TERM_WRITE_LITERAL(TERMS_CURSOR_POS_SET(line, columns))
 
@@ -171,6 +174,9 @@
 
 #define TERM_CURSOR_SAVE() TERM_WRITE_LITERAL(TERMS_CURSOR_SAVE)
 #define TERM_CURSOR_RESTORE() TERM_WRITE_LITERAL(TERMS_CURSOR_RESTORE)
+
+#define TERM_CURSOR_HIDE() TERM_WRITE_LITERAL(TERMS_CURSOR_HIDE)
+#define TERM_CURSOR_SHOW() TERM_WRITE_LITERAL(TERMS_CURSOR_SHOW)
 
 __attribute__((destructor))
 static void scti_destructor_reset_terminal_graphics(void) {
