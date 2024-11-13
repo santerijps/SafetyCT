@@ -37,6 +37,7 @@ typedef enum buffer_error {
     BUFFER_ERROR_CALLOC_FAILED, // A call to `calloc` failed.
     BUFFER_ERROR_ZERO_COUNT,    // The specified count is zero.
     BUFFER_ERROR_CAPACITY_FULL, // The buffer capacity is full.
+    BUFFER_ERROR_ZERO_SIZE,     // The specified size is zero.
 } BufferError;
 
 /**
@@ -194,6 +195,33 @@ BufferError buffer_write_string(
 ) {
     size_t count = strlen(string);
     return buffer_write_bytes(buffer, (unsigned char*)string, count);
+}
+
+/**
+ * @name buffer_copy_bytes
+ * @brief Copy bytes from a pointer to the buffer.
+ */
+BufferError buffer_copy_bytes(
+    Buffer* const buffer,
+    void* const pointer,
+    size_t const size
+) {
+    if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
+    if (pointer == NULL) return BUFFER_ERROR_NULL_POINTER;
+    if (size == 0) return BUFFER_ERROR_ZERO_SIZE;
+
+    if (buffer->type == BUFFER_TYPE_DYNAMIC) {
+        BufferError error = buffer_grow(buffer, buffer->len + size);
+        if (error != BUFFER_ERROR_NONE) return error;
+
+    } else if (buffer->len + size >= buffer->cap) {
+        return BUFFER_ERROR_CAPACITY_FULL;
+    }
+
+    memcpy(buffer->ptr + buffer->len, pointer, size);
+    buffer->len += size;
+
+    return BUFFER_ERROR_NONE;
 }
 
 #endif
