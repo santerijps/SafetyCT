@@ -44,7 +44,7 @@ typedef enum buffer_error {
  * @name buffer_init_dynamic
  * @brief Initialize a dynamic buffer with a specified capacity.
  */
-__attribute__((warn_unused_result)) BufferError buffer_init_dynamic(
+__attribute__((warn_unused_result)) static BufferError buffer_init_dynamic(
     Buffer* const buffer,
     size_t const capacity
 ) {
@@ -67,7 +67,7 @@ __attribute__((warn_unused_result)) BufferError buffer_init_dynamic(
  * @name buffer_init_static
  * @brief Initialize a static buffer with a specified capacity.
  */
-BufferError buffer_init_static(
+static BufferError buffer_init_static(
     Buffer* const buffer,
     void* const pointer,
     size_t const capacity
@@ -90,7 +90,7 @@ BufferError buffer_init_static(
  * @name buffer_clear
  * @brief Clear the buffer of all of its contents and set `len` to 0.
  */
-BufferError buffer_clear(Buffer* const buffer) {
+static BufferError buffer_clear(Buffer* const buffer) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
     buffer->len = 0;
     memset(buffer->ptr, 0, buffer->cap);
@@ -101,7 +101,7 @@ BufferError buffer_clear(Buffer* const buffer) {
  * @name buffer_deinit
  * @brief Clear the buffer and free its memory if the buffer is dynamic.
  */
-BufferError buffer_deinit(Buffer* const buffer) {
+static BufferError buffer_deinit(Buffer* const buffer) {
     if (buffer == NULL) return BUFFER_ERROR_NULL_BUFFER;
     BufferError error = buffer_clear(buffer);
     if (error != BUFFER_ERROR_NONE) return error;
@@ -116,7 +116,7 @@ BufferError buffer_deinit(Buffer* const buffer) {
  * @name buffer_grow
  * @brief Grow the buffer to match the specified capacity.
  */
-BufferError buffer_grow(
+static BufferError buffer_grow(
     Buffer* const buffer,
     size_t const capacity
 ) {
@@ -136,7 +136,7 @@ BufferError buffer_grow(
  * @name buffer_write_byte
  * @brief Write a single byte into the buffer.
  */
-BufferError buffer_write_byte(
+static BufferError buffer_write_byte(
     Buffer* const buffer,
     unsigned char const byte
 ) {
@@ -160,7 +160,7 @@ BufferError buffer_write_byte(
  * @name buffer_write_bytes
  * @brief Write a specified amount of bytes into the buffer.
  */
-BufferError buffer_write_bytes(
+static BufferError buffer_write_bytes(
     Buffer* const buffer,
     unsigned char const* const bytes,
     size_t const count
@@ -189,7 +189,7 @@ BufferError buffer_write_bytes(
  * @name buffer_write_string
  * @brief Write a string into the buffer.
  */
-BufferError buffer_write_string(
+static BufferError buffer_write_string(
     Buffer* const buffer,
     char const* const string
 ) {
@@ -201,7 +201,7 @@ BufferError buffer_write_string(
  * @name buffer_copy_bytes
  * @brief Copy bytes from a pointer to the buffer.
  */
-BufferError buffer_copy_bytes(
+static BufferError buffer_copy_bytes(
     Buffer* const buffer,
     void* const pointer,
     size_t const size
